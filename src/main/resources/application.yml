@@ -1,5 +1,5 @@
 server:
-  port: 80
+  port: 8080
 spring:
   application:
     name: reggie_take_out
@@ -9,6 +9,17 @@ spring:
       url: jdbc:mysql://47.113.179.118:3306/reggie?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
       username: root
       password: yhy.1999
+  main:
+    banner-mode: off
+  # 缓存开关
+  thymeleaf:
+    cache: true
+  devtools:
+    restart:
+      #热部署生效
+      enabled: true
+      #设置重启的目录,添加那个目录的文件需要restart
+      additional-paths: src/main/java/com/yinhaoyu
 mybatis-plus:
   configuration:
     #在映射实体或者属性时，将数据库中表名和字段名中的下划线去掉，按照驼峰命名法映射
@@ -16,4 +27,5 @@ mybatis-plus:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
-      id-type: assign_id
+      id-type: auto
+    banner: false

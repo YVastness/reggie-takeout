@@ -1,4 +1,4 @@
-package io.github.entity;
+package com.yinhaoyu.entity;
 
 import lombok.Data;
 import java.io.Serializable;

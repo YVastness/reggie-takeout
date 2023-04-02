@@ -1,10 +1,13 @@
-package io.github.config;
+package com.yinhaoyu.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
 
+/**
+ * @author Vastness
+ */
 @Slf4j
 @Configuration
 public class WebMvcConfig extends WebMvcConfigurationSupport {
@@ -17,4 +20,16 @@ public class WebMvcConfig extends WebMvcConfigurationSupport {
         registry.addResourceHandler("/backend/**").addResourceLocations("classpath:/backend/");
         registry.addResourceHandler("/front/**").addResourceLocations("classpath:/front/");
     }
+
+//    @Override
+//    protected void addInterceptors(InterceptorRegistry registry) {
+//        registry.addInterceptor(new LoginInterceptor())
+//                .addPathPatterns("/**")
+//                .excludePathPatterns(
+//                        "/employee/login",
+//                        "/employee/logout",
+////                      不拦截静态资源
+//                        "/backend/**",
+//                        "/front/**");
+//    }
 }

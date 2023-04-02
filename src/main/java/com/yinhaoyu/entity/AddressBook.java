@@ -1,4 +1,4 @@
-package io.github.entity;
+package com.yinhaoyu.entity;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
