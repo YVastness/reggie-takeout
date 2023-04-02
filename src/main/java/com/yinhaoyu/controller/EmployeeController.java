@@ -83,7 +83,7 @@ public class EmployeeController {
         employee.setUpdateUser((Long) request.getSession().getAttribute("employee"));
         log.info("新增员工：{}", employee);
         employeeService.save(employee);
-        return null;
+        return Result.success("成功添加员工");
     }
 
 
