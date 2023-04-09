@@ -7,6 +7,8 @@ import com.yinhaoyu.entity.Employee;
 import com.yinhaoyu.service.EmployeeService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +22,7 @@ import java.time.LocalDateTime;
 @RestController
 @RequestMapping("/employee")
 public class EmployeeController {
+    private static final Logger logger = LoggerFactory.getLogger(EmployeeController.class);
     private final EmployeeService employeeService;
 
     public EmployeeController(EmployeeService employeeService) {
@@ -39,9 +42,11 @@ public class EmployeeController {
         String password = DigestUtils.md5DigestAsHex(employee.getPassword().getBytes());
         // 2. 根据前端提交的用户名username查询数据库
         log.info(employee.getUsername());
+        log.info(password);
         LambdaQueryWrapper<Employee> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Employee::getUsername, employee.getUsername());
         Employee emp = employeeService.getOne(queryWrapper);
+        logger.info("test{}", emp);
         // 3. 没有查询到用户就返回登陆失败
         if (emp == null) {
             return Result.error("登陆失败");
@@ -87,7 +92,7 @@ public class EmployeeController {
     }
 
     @GetMapping("page")
-    public Result<Page> pagination(Integer page, Integer pageSize, String name) {
+    public Result<Page<Employee>> pagination(Integer page, Integer pageSize, String name) {
         log.info("page={}, pageSize={}, name={}", page, pageSize, name);
         // 构造分页构造器
         Page<Employee> pageInfo = new Page<>(page, pageSize);
@@ -103,21 +108,24 @@ public class EmployeeController {
         return Result.success(pageInfo);
     }
 
-//    @PutMapping("status")
-//    public Result<Page> setStatus(Employee employee) {
-//        log.info("状态：{}", status);
-//        // 构造分页构造器
-//        Page<Employee> pageInfo = new Page<>(page, pageSize);
-//        // 构造查询包装器
-//        LambdaQueryWrapper<Employee> queryWrapper = new LambdaQueryWrapper<>();
-//        // 添加模糊查询条件
-//        queryWrapper.like(StringUtils.isNotEmpty(name), Employee::getUsername, name);
-//        // 添加排序查询条件
-//        queryWrapper.orderByDesc(Employee::getUpdateTime);
-//        // 执行查询
-//        employeeService.page(pageInfo, queryWrapper);
-//        log.info("page:{}", pageInfo.getRecords());
-//        return Result.success(pageInfo);
-//    }
+    @PutMapping
+    public Result<String> updateEmployee(@RequestBody Employee employee, HttpServletRequest request) {
+        Long employeeId = (Long) request.getSession().getAttribute("employee");
+        employee.setUpdateUser(employeeId);
+        employee.setUpdateTime(LocalDateTime.now());
+        if (employeeService.updateById(employee)) {
+            return Result.success("更新员工成功");
+        }
+        return Result.error("更新员工失败");
+    }
+
+    @GetMapping("{id}")
+    public Result<Employee> getById(@PathVariable Long id) {
+        Employee employee = employeeService.getById(id);
+        if (employee != null) {
+            return Result.success(employee);
+        }
+        return Result.error("获取成员失败");
+    }
 
 }
