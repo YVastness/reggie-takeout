@@ -1,6 +1,7 @@
 package com.yinhaoyu.filter;
 
 import com.alibaba.fastjson.JSON;
+import com.yinhaoyu.common.BaseContext;
 import com.yinhaoyu.common.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.AntPathMatcher;
@@ -41,6 +42,7 @@ public class LoginCheckFilter implements Filter {
         log.info("路径需要处理");
         // 判断登录状态，如果已登录，则直接放行
         if (request.getSession().getAttribute("employee") != null) {
+            BaseContext.setCurrentId((Long) request.getSession().getAttribute("employee"));
             filterChain.doFilter(request, response);
             return;
         }
@@ -54,7 +56,7 @@ public class LoginCheckFilter implements Filter {
      *
      * @param urls       被排除过滤的urls
      * @param requestUrl 本次客户端请求的地址
-     * @return           true: 匹配成功
+     * @return true: 匹配成功
      */
     private boolean checkPath(String[] urls, String requestUrl) {
         for (String url : urls) {

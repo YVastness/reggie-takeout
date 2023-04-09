@@ -13,7 +13,6 @@ import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
 
 /**
  * @author Vastness
@@ -79,13 +78,8 @@ public class EmployeeController {
     }
 
     @PostMapping
-    public Result<String> saveEmployee(HttpServletRequest request, @RequestBody Employee employee) {
+    public Result<String> saveEmployee(@RequestBody Employee employee) {
         employee.setPassword(DigestUtils.md5DigestAsHex("123456".getBytes()));
-        employee.setCreateTime(LocalDateTime.now());
-        employee.setUpdateTime(LocalDateTime.now());
-        Long createUser = (Long) request.getSession().getAttribute("employee");
-        employee.setCreateUser(createUser);
-        employee.setUpdateUser(createUser);
         log.info("新增员工：{}", employee);
         employeeService.save(employee);
         return Result.success("成功添加员工");
@@ -109,10 +103,7 @@ public class EmployeeController {
     }
 
     @PutMapping
-    public Result<String> updateEmployee(@RequestBody Employee employee, HttpServletRequest request) {
-        Long employeeId = (Long) request.getSession().getAttribute("employee");
-        employee.setUpdateUser(employeeId);
-        employee.setUpdateTime(LocalDateTime.now());
+    public Result<String> updateEmployee(@RequestBody Employee employee) {
         if (employeeService.updateById(employee)) {
             return Result.success("更新员工成功");
         }
