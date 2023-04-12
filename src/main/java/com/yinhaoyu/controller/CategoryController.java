@@ -8,6 +8,8 @@ import com.yinhaoyu.service.CategoryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * 分类管理控制类
  *
@@ -54,5 +56,16 @@ public class CategoryController {
             return Result.success("更新分类成功");
         }
         return Result.error("更新分类失败");
+    }
+
+    @GetMapping("list")
+    public Result<List<Category>> list(Integer type) {
+        LambdaQueryWrapper<Category> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Category::getType, type);
+        List<Category> categories = categoryService.list(queryWrapper);
+        if (categories != null) {
+            return Result.success(categories);
+        }
+        return Result.error("还没有添加菜品分类");
     }
 }
