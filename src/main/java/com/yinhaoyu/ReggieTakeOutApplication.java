@@ -4,8 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.ServletComponentScan;
-
-import javax.servlet.annotation.WebServlet;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
  * SpringBoot启动类
@@ -20,6 +19,7 @@ import javax.servlet.annotation.WebServlet;
  无需其他代码。
  */
 @ServletComponentScan
+@EnableTransactionManagement
 public class ReggieTakeOutApplication {
 
     public static void main(String[] args) {

@@ -137,4 +137,12 @@ public class DishController {
         }
         return Result.error("菜品删除失败");
     }
+
+    @GetMapping("list")
+    public Result<List<Dish>> list(Long categoryId) {
+        LambdaQueryWrapper<Dish> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Dish::getCategoryId, categoryId);
+        List<Dish> dishes = dishService.list(queryWrapper);
+        return Result.success(dishes);
+    }
 }
