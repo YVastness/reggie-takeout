@@ -10,6 +10,11 @@ spring:
       url: jdbc:mysql:///reggie?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
       username: root
       password: yhy.1999
+  redis:
+    host: 47.113.179.118
+    port: 6379
+    password: yhy.1999
+    database: 0
   main:
     banner-mode: off
   # 缓存开关
