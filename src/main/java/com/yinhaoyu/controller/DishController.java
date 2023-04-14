@@ -139,10 +139,22 @@ public class DishController {
     }
 
     @GetMapping("list")
-    public Result<List<Dish>> list(Long categoryId) {
+    public Result<List<DishDto>> list(Long categoryId) {
         LambdaQueryWrapper<Dish> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Dish::getCategoryId, categoryId);
         List<Dish> dishes = dishService.list(queryWrapper);
-        return Result.success(dishes);
+        List<DishDto> dishDtoList = dishes.stream().map(dish -> {
+            DishDto dishDto = new DishDto();
+            BeanUtils.copyProperties(dish, dishDto);
+            LambdaQueryWrapper<DishFlavor> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(DishFlavor::getDishId, dishDto.getId());
+            List<DishFlavor> dishFlavors = dishFlavorService.list(wrapper);
+            dishDto.setFlavors(dishFlavors);
+            Category category = categoryService.getById(categoryId);
+            String categoryName = category.getName();
+            dishDto.setCategoryName(categoryName);
+            return dishDto;
+        }).collect(Collectors.toList());
+        return Result.success(dishDtoList);
     }
 }

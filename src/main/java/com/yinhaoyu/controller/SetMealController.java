@@ -163,4 +163,12 @@ public class SetMealController {
         }
         return Result.error("菜品删除失败");
     }
+
+    @GetMapping("list")
+    public Result<List<Setmeal>> list(Long categoryId) {
+        LambdaQueryWrapper<Setmeal> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Setmeal::getCategoryId, categoryId);
+        List<Setmeal> dishes = setMealService.list(queryWrapper);
+        return Result.success(dishes);
+    }
 }
