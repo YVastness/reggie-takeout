@@ -13,14 +13,19 @@ import com.yinhaoyu.service.SetMealDishService;
 import com.yinhaoyu.service.SetMealService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
+ * 套餐管理
+ *
  * @author Vastness
  */
 @Slf4j
@@ -30,13 +35,22 @@ public class SetMealController {
     private final SetMealService setMealService;
     private final CategoryService categoryService;
     private final SetMealDishService setMealDishService;
+    private final RedisTemplate<Object, Object> redisTemplate;
 
-    public SetMealController(SetMealService setMealService, SetMealDishService setMealDishService, CategoryService categoryService) {
+    public SetMealController(SetMealService setMealService, SetMealDishService setMealDishService, CategoryService categoryService, RedisTemplate<Object, Object> redisTemplate) {
         this.setMealService = setMealService;
         this.setMealDishService = setMealDishService;
         this.categoryService = categoryService;
+        this.redisTemplate = redisTemplate;
     }
 
+
+    /**
+     * 添加套餐
+     *
+     * @param setmealDto 组合套餐和菜品信息的映射类
+     * @return 添加菜品是否成功
+     */
     @PostMapping
     public Result<String> save(@RequestBody SetmealDto setmealDto) {
         boolean isSave = setMealService.save(setmealDto);
@@ -44,11 +58,22 @@ public class SetMealController {
         setmealDishes.forEach(setmealDish -> setmealDish.setSetmealId(setmealDto.getId()));
         boolean isSaveDish = setMealDishService.saveBatch(setmealDishes);
         if (isSave && isSaveDish) {
+            // 清除套餐缓存
+            String key = "setMealCategory_" + setmealDto.getCategoryId();
+            redisTemplate.delete(key);
             return Result.success("");
         }
         return Result.error("保存套餐错误");
     }
 
+    /**
+     * 分页查询
+     *
+     * @param page     页码
+     * @param pageSize 页的大小
+     * @param name     按名查询
+     * @return 页信息
+     */
     @GetMapping("page")
     public Result<Page<SetmealDto>> pagination(Integer page, Integer pageSize, String name) {
         Page<Setmeal> pageInfo = new Page<>(page, pageSize);
@@ -71,6 +96,13 @@ public class SetMealController {
         return Result.success(pageInfoDto);
     }
 
+
+    /**
+     * 通过套餐id获取套餐信息
+     *
+     * @param id 套餐id
+     * @return 套餐信息
+     */
     @GetMapping("{id}")
     public Result<SetmealDto> getById(@PathVariable Long id) {
         Setmeal setmeal = setMealService.getById(id);
@@ -83,6 +115,12 @@ public class SetMealController {
         return Result.success(setmealDto);
     }
 
+    /**
+     * 更新套餐信息
+     *
+     * @param setmealDto 组合套餐和菜品的映射类
+     * @return 更新套餐售卖状态是否成功
+     */
     @PutMapping
     @Transactional(rollbackFor = Exception.class)
     public Result<String> update(@RequestBody SetmealDto setmealDto) {
@@ -121,10 +159,21 @@ public class SetMealController {
             setMealDishService.saveOrUpdate(setmealDish, setmealDishUpdateWrapper);
         });
         if (isSave) {
+            // 清除套餐缓存
+            String key = "setMealCategory_" + setmealDto.getCategoryId();
+            redisTemplate.delete(key);
             return Result.success("");
         }
         return Result.error("保存套餐错误");
     }
+
+    /**
+     * 更新套餐售卖状态
+     *
+     * @param status 售卖状态
+     * @param ids    需要更新售卖状态的套餐
+     * @return 更新套餐售卖状态是否成功
+     */
 
     @PostMapping("status/{status}")
     public Result<String> updateStatus(@PathVariable Integer status, Long[] ids) {
@@ -134,12 +183,23 @@ public class SetMealController {
             updateWrapper.eq(Setmeal::getId, ids[i]);
             setMealService.update(updateWrapper);
             if (i == ids.length - 1) {
+                // 清除套餐缓存
+                Set<Object> keys = redisTemplate.keys("setMealCategory_*");
+                if (keys != null) {
+                    redisTemplate.delete(keys);
+                }
                 return Result.success("");
             }
         }
         return Result.error("转换套餐状态失败");
     }
 
+    /**
+     * 删除套餐
+     *
+     * @param ids 被删除套餐们的id
+     * @return 套餐们是否被删除
+     */
     @DeleteMapping
     public Result<String> delete(Long[] ids) {
         for (int i = 0; i < ids.length; i++) {
@@ -156,6 +216,11 @@ public class SetMealController {
                 setmealDishUpdateWrapper.eq(SetmealDish::getDishId, ids[finalI]);
                 setMealDishService.update(setmealDishUpdateWrapper);
             });
+            // 清除套餐缓存
+            Set<Object> keys = redisTemplate.keys("setMealCategory_*");
+            if (keys != null) {
+                redisTemplate.delete(keys);
+            }
             setMealService.update(updateWrapper);
             if (i == ids.length - 1) {
                 return Result.success("");
@@ -164,11 +229,30 @@ public class SetMealController {
         return Result.error("菜品删除失败");
     }
 
+
+    /**
+     * 显示一个套餐分类里的套餐信息
+     *
+     * @param setmeal 通过分类id获取套餐信息
+     * @return 返回套餐信息
+     */
     @GetMapping("list")
-    public Result<List<Setmeal>> list(Long categoryId) {
+    public Result<List<Setmeal>> list(Setmeal setmeal) {
+        String key = "dishCategory_" + setmeal.getCategoryId();
+        // 先从Redis获取菜品缓存
+        List<Setmeal> setMeals = (List<Setmeal>) redisTemplate.opsForValue().get(key);
+
+        // 如果存在直接返回菜品数据
+        if (setMeals != null) {
+            return Result.success(setMeals);
+        }
+
+        // 不存在需要先查询数据库，将查询的数据缓存到redis中
         LambdaQueryWrapper<Setmeal> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Setmeal::getCategoryId, categoryId);
-        List<Setmeal> dishes = setMealService.list(queryWrapper);
-        return Result.success(dishes);
+        queryWrapper.eq(Setmeal::getCategoryId, setmeal.getCategoryId());
+        queryWrapper.eq(Setmeal::getStatus, setmeal.getStatus());
+        List<Setmeal> setmealList = setMealService.list(queryWrapper);
+        redisTemplate.opsForValue().set(key, setmealList, 1, TimeUnit.HOURS);
+        return Result.success(setmealList);
     }
 }
