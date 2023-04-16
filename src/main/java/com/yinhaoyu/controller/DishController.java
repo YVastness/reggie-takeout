@@ -207,10 +207,11 @@ public class DishController {
      * @return 返回菜品信息
      */
     @GetMapping("list")
-    public Result<Object> list(Dish dish) {
+    public Result<List<DishDto>> list(Dish dish) {
+        List<DishDto> dishDtos;
         String key = "dishCategory_" + dish.getCategoryId();
         // 先从Redis获取菜品缓存
-        Object dishDtos = redisTemplate.opsForValue().get(key);
+        dishDtos = (List<DishDto>) redisTemplate.opsForValue().get(key);
 
         // 如果存在直接返回菜品数据
         if (dishDtos != null) {
@@ -221,10 +222,10 @@ public class DishController {
         // 通过categoryId查询菜品信息
         LambdaQueryWrapper<Dish> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Dish::getCategoryId, dish.getCategoryId());
-        queryWrapper.eq(Dish::getStatus, dish.getStatus());
+        queryWrapper.eq(dish.getStatus() != null, Dish::getStatus, dish.getStatus());
         List<Dish> dishes = dishService.list(queryWrapper);
         // 通过stream流将菜品和菜品口味映射到dishDto
-        List<DishDto> dishDtoList = dishes.stream().map(dishValue -> {
+        dishDtos = dishes.stream().map(dishValue -> {
             DishDto dishDto = new DishDto();
             BeanUtils.copyProperties(dishValue, dishDto);
             LambdaQueryWrapper<DishFlavor> wrapper = new LambdaQueryWrapper<>();
@@ -236,7 +237,7 @@ public class DishController {
             dishDto.setCategoryName(categoryName);
             return dishDto;
         }).collect(Collectors.toList());
-        redisTemplate.opsForValue().set(key, dishDtoList, 1, TimeUnit.HOURS);
-        return Result.success(dishDtoList);
+        redisTemplate.opsForValue().set(key, dishDtos, 1, TimeUnit.HOURS);
+        return Result.success(dishDtos);
     }
 }

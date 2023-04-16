@@ -15,6 +15,9 @@ spring:
     port: 6379
     password: yhy.1999
     database: 0
+  cache:
+    redis:
+      time-to-live: 1800000
   main:
     banner-mode: off
   # 缓存开关

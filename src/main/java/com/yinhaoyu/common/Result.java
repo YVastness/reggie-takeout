@@ -2,15 +2,18 @@ package com.yinhaoyu.common;
 
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * 通用的返回结果工具类
+ *
  * @author Vastness
  */
 @Data
-public class Result<T> {
+public class Result<T> implements Serializable {
+    private static final long serialVersionUID = 1015661124191204996L;
     /**
      * 编码：1成功，0和其它数字为失败
      */
